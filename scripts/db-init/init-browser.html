@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数据库初始化</title>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; background: #1a1a2e; color: #eee; padding: 40px; max-width: 800px; margin: 0 auto; }
+  h2 { color: #3ecf8e; }
+  .log { background: #0d1117; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: Consolas, monospace; font-size: 13px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+  .log .ok { color: #3ecf8e; }
+  .log .err { color: #f85149; }
+  .log .info { color: #58a6ff; }
+  .log .warn { color: #d29922; }
+  button { padding: 14px 32px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-right: 12px; }
+  .btn-go { background: #3ecf8e; color: #000; font-weight: bold; }
+  .btn-go:hover { background: #2ea870; }
+  .btn-copy { background: #30363d; color: #c9d1d9; }
+  .btn-copy:hover { background: #484f58; }
+  .step { color: #8b949e; font-size: 14px; margin: 8px 0; }
+  .step strong { color: #c9d1d9; }
+</style>
+</head>
+<body>
+
+<h2>🔧 调休管理系统 - 数据库初始化</h2>
+
+<div class="step"><strong>步骤1：</strong>点击下方按钮，在弹出的 Supabase 页面中登录（如果还没登录的话）</div>
+<div class="step"><strong>步骤2：</strong>登录后回到这个页面，点击「开始初始化」</div>
+
+<div style="margin: 20px 0;">
+  <button class="btn-copy" onclick="window.open('https://supabase.com/dashboard/project/pnqfvfhqekgroliztnuo/sql/new')">
+    🔗 打开 Supabase SQL Editor（先登录）
+  </button>
+</div>
+
+<div class="step"><strong>步骤3：</strong>在 Supabase 那边登录后，关闭新窗口，回到这里：</div>
+<div style="margin: 20px 0;">
+  <button class="btn-go" id="btnInit" onclick="startInit()" style="font-size: 20px; padding: 16px 40px;">
+    🚀 开始自动初始化数据库
+  </button>
+</div>
+
+<p class="step"><strong>备用方案：</strong>如果自动方案失败，可以<a href="javascript:copySQL()">📋 一键复制 SQL</a>，粘贴到刚才打开的 SQL Editor 里手动 Run</p>
+
+<div class="log" id="log">等待操作...</div>
+
+<textarea id="sql" style="display:none;">-- ============================================================
+-- 调休管理系统 - Supabase 数据库初始化脚本
+-- ============================================================
+
+-- 1. 健康检查表
+CREATE TABLE IF NOT EXISTS health_check (
+  id SERIAL NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO health_check (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+-- 2. 员工表
+CREATE TABLE IF NOT EXISTS employees (
+  id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  role_category VARCHAR(20) NOT NULL,
+  position VARCHAR(50) NOT NULL,
+  department VARCHAR(100),
+  module VARCHAR(100),
+  squad VARCHAR(100),
+  phone VARCHAR(20),
+  signature_key TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS employees_username_idx ON employees(username);
+CREATE INDEX IF NOT EXISTS employees_role_category_idx ON employees(role_category);
+CREATE INDEX IF NOT EXISTS employees_position_idx ON employees(position);
+
+-- 3. 加班工时记录表
+CREATE TABLE IF NOT EXISTS overtime_records (
+  id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+  employee_id VARCHAR(36) NOT NULL REFERENCES employees(id),
+  overtime_date DATE NOT NULL,
+  start_time TIMESTAMPTZ,
+  end_time TIMESTAMPTZ,
+  hours NUMERIC(8,2) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  selected_level1_approver_id VARCHAR(36) REFERENCES employees(id),
+  selected_level2_approver_id VARCHAR(36) REFERENCES employees(id),
+  selected_level3_approver_id VARCHAR(36) REFERENCES employees(id),
+  level1_approver_id VARCHAR(36) REFERENCES employees(id),
+  level1_approved_at TIMESTAMPTZ,
+  level1_approver_name VARCHAR(50),
+  level1_remark TEXT,
+  level2_approver_id VARCHAR(36) REFERENCES employees(id),
+  level2_approved_at TIMESTAMPTZ,
+  level2_approver_name VARCHAR(50),
+  level2_remark TEXT,
+  level3_approver_id VARCHAR(36) REFERENCES employees(id),
+  level3_approved_at TIMESTAMPTZ,
+  level3_approver_name VARCHAR(50),
+  level3_remark TEXT,
+  imported BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS overtime_records_employee_id_idx ON overtime_records(employee_id);
+CREATE INDEX IF NOT EXISTS overtime_records_status_idx ON overtime_records(status);
+CREATE INDEX IF NOT EXISTS overtime_records_overtime_date_idx ON overtime_records(overtime_date);
+CREATE INDEX IF NOT EXISTS overtime_records_level1_approver_id_idx ON overtime_records(level1_approver_id);
+CREATE INDEX IF NOT EXISTS overtime_records_level2_approver_id_idx ON overtime_records(level2_approver_id);
+
+-- 4. 调休申请表
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+  employee_id VARCHAR(36) NOT NULL REFERENCES employees(id),
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  hours NUMERIC(8,2) NOT NULL,
+  reason TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  selected_level1_approver_id VARCHAR(36) REFERENCES employees(id),
+  selected_level2_approver_id VARCHAR(36) REFERENCES employees(id),
+  selected_level3_approver_id VARCHAR(36) REFERENCES employees(id),
+  level1_approver_id VARCHAR(36) REFERENCES employees(id),
+  level1_approved_at TIMESTAMPTZ,
+  level1_approver_name VARCHAR(50),
+  level1_remark TEXT,
+  level2_approver_id VARCHAR(36) REFERENCES employees(id),
+  level2_approved_at TIMESTAMPTZ,
+  level2_approver_name VARCHAR(50),
+  level2_remark TEXT,
+  level3_approver_id VARCHAR(36) REFERENCES employees(id),
+  level3_approved_at TIMESTAMPTZ,
+  level3_approver_name VARCHAR(50),
+  level3_remark TEXT,
+  imported BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS leave_requests_employee_id_idx ON leave_requests(employee_id);
+CREATE INDEX IF NOT EXISTS leave_requests_status_idx ON leave_requests(status);
+CREATE INDEX IF NOT EXISTS leave_requests_start_time_idx ON leave_requests(start_time);
+CREATE INDEX IF NOT EXISTS leave_requests_level1_approver_id_idx ON leave_requests(level1_approver_id);
+CREATE INDEX IF NOT EXISTS leave_requests_level2_approver_id_idx ON leave_requests(level2_approver_id);
+
+-- 5. 加班余额汇总表
+CREATE TABLE IF NOT EXISTS overtime_balances (
+  id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+  employee_id VARCHAR(36) NOT NULL REFERENCES employees(id),
+  total_overtime_hours NUMERIC(8,2) NOT NULL DEFAULT 0,
+  used_leave_hours NUMERIC(8,2) NOT NULL DEFAULT 0,
+  remaining_hours NUMERIC(8,2) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS overtime_balances_employee_id_idx ON overtime_balances(employee_id);
+
+-- 6. 审批规则配置表
+CREATE TABLE IF NOT EXISTS approval_rules (
+  id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+  applicant_role VARCHAR(50) NOT NULL,
+  applicant_category VARCHAR(20) NOT NULL,
+  level1_approver_position VARCHAR(50) NOT NULL,
+  level2_approver_position VARCHAR(50),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS approval_rules_applicant_role_idx ON approval_rules(applicant_role);
+CREATE INDEX IF NOT EXISTS approval_rules_applicant_category_idx ON approval_rules(applicant_category);
+
+-- 7. 管理员账号 (admin / admin123)
+INSERT INTO employees (
+  username, password_hash, name, role_category, position, department, is_active
+) VALUES (
+  'admin',
+  '$2b$10$/QcrS.4kI2WShVPie/WgLupJqCOoIOXwSs62/bnVGbUkZVjodjt0a',
+  '系统管理员',
+  'admin',
+  '系统管理员',
+  '综合部',
+  true
+) ON CONFLICT (username) DO NOTHING;
+</textarea>
+
+<script>
+const PROJECT = "pnqfvfhqekgroliztnuo";
+const log = document.getElementById("log");
+const btn = document.getElementById("btnInit");
+
+function logMsg(msg, cls="") {
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = msg + "\n";
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function execSQL(sql) {
+  const res = await fetch(`https://${PROJECT}.supabase.co/rest/v1/rpc/exec_sql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: sql }),
+    credentials: "include",
+  });
+  return res;
+}
+
+async function execViaPgMeta(sql) {
+  const res = await fetch(`https://${PROJECT}.supabase.co/pg-meta/v1/query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: sql }),
+    credentials: "include",
+  });
+  return res;
+}
+
+async function startInit() {
+  btn.disabled = true;
+  btn.textContent = "⏳ 正在初始化...";
+  log.innerHTML = "";
+  logMsg("🚀 开始初始化数据库...\n", "info");
+
+  const sql = document.getElementById("sql").value;
+  const stmts = sql.split(";").map(s => s.trim()).filter(s => s.length > 0 && !s.startsWith("--"));
+  
+  let success = 0, fail = 0;
+
+  // 先尝试 pg-meta 接口
+  logMsg("🔍 方式1: 尝试 pg-meta API ...", "info");
+  let usePgMeta = false;
+  try {
+    const testRes = await execViaPgMeta("SELECT 1 as t");
+    if (testRes.ok) {
+      logMsg("✅ pg-meta API 可用！\n", "ok");
+      usePgMeta = true;
+    } else {
+      logMsg(`⚠️ pg-meta 不可用 (${testRes.status})，尝试 rpc ...`, "warn");
+    }
+  } catch(e) {
+    logMsg(`⚠️ pg-meta 错误: ${e.message}`, "warn");
+  }
+
+  for (let i = 0; i < stmts.length; i++) {
+    const stmt = stmts[i];
+    let short = stmt.slice(0, 50).replace(/\n/g, " ");
+    
+    try {
+      const res = usePgMeta ? await execViaPgMeta(stmt) : await execSQL(stmt);
+      if (res.ok) {
+        if (stmt.toUpperCase().includes("CREATE TABLE")) {
+          const m = stmt.match(/CREATE TABLE.*?(\w+)/i);
+          if (m) logMsg(`  ✅ 创建表: ${m[1]}`, "ok");
+        } else if (stmt.toUpperCase().includes("INSERT INTO")) {
+          logMsg(`  ✅ 插入数据`, "ok");
+        } else {
+          logMsg(`  ✅ ${short}...`, "ok");
+        }
+        success++;
+      } else {
+        const txt = await res.text().catch(() => "");
+        if (txt.toLowerCase().includes("already exists") || txt.toLowerCase().includes("duplicate")) {
+          logMsg(`  ⏭️ 已存在/重复`, "warn");
+          success++;
+        } else {
+          logMsg(`  ❌ [${i+1}] ${res.status}`, "err");
+          fail++;
+        }
+      }
+    } catch(e) {
+      logMsg(`  ❌ [${i+1}] ${e.message}`, "err");
+      fail++;
+    }
+  }
+
+  logMsg(`\n📊 结果: 成功 ${success} | 失败 ${fail}`, "info");
+
+  if (fail === 0) {
+    logMsg("\n🎉 数据库初始化完成！\n", "ok");
+    logMsg("现在可以访问: http://localhost:3000", "ok");
+    logMsg("管理员账号: admin / admin123", "ok");
+  } else {
+    logMsg("\n⚠️ 自动初始化失败，请使用备用方案（下方「一键复制 SQL」按钮）", "err");
+    logMsg("\n复制 SQL 后，粘贴到 Supabase SQL Editor 中点击 Run", "info");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "🔄 重新初始化";
+}
+
+function copySQL() {
+  const sql = document.getElementById("sql").value;
+  navigator.clipboard.writeText(sql).then(() => {
+    logMsg("\n✅ SQL 已复制到剪贴板！", "ok");
+    logMsg("请粘贴到 Supabase SQL Editor 中，点击 Run 按钮执行", "info");
+  }).catch(() => {
+    document.getElementById("sql").style.display = "block";
+    document.getElementById("sql").style.width = "100%";
+    document.getElementById("sql").style.height = "300px";
+    document.getElementById("sql").style.background = "#0d1117";
+    document.getElementById("sql").style.color = "#c9d1d9";
+    document.getElementById("sql").style.border = "1px solid #30363d";
+    document.getElementById("sql").style.borderRadius = "8px";
+    document.getElementById("sql").style.padding = "12px";
+    document.getElementById("sql").select();
+    logMsg("\n📋 请手动 Ctrl+C 复制上方 SQL，粘贴到 Supabase SQL Editor 中 Run", "info");
+  });
+}
+</script>
+
+</body>
+</html>

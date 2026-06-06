@@ -92,5 +92,6 @@
     "react-dev-inspector": "^2.0.1",
     "shadcn": "latest",
     "supabase": "^2.105.0"
-  }
+  },
+  "packageManager": "pnpm@9.0.0"
 }
