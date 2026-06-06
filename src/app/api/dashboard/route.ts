@@ -3,6 +3,8 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getCurrentUser } from '@/lib/auth';
 import { canApprove, isAdmin } from '@/lib/auth-shared';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const user = await getCurrentUser();

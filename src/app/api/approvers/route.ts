@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { getApprovalRule } from '@/lib/auth-shared';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/approvers?position=xxx&hours=8&is_leave=true
  * 获取指定岗位和调休时长对应的可选审批人列表

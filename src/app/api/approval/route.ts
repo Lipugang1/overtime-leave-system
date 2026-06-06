@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isAdmin, isManagerial } from '@/lib/auth-shared';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/approval - 获取审批列表（含待审批和历史记录）
  * 参数: status_filter=pending|approved|rejected|all (默认pending)

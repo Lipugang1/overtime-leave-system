@@ -4,6 +4,8 @@ import { isAdmin } from '@/lib/auth-shared';
 import { getApprovalRule } from '@/lib/auth-shared';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
+export const runtime = 'nodejs';
+
 /**
  * POST /api/leave - 创建调休申请
  */
