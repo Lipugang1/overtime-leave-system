@@ -184,22 +184,72 @@ export function getApprovalRule(position: string, leaveHours: number, isLeave: b
   return defaultRule;
 }
 
-// ===== JWT Token 工具 =====
-import { SignJWT, jwtVerify } from 'jose';
+// ===== JWT Token 工具 (Edge runtime compatible, no external deps) =====
+
+function base64UrlEncode(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const base64 = btoa(String.fromCharCode(...bytes));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64UrlDecode(str: string): Uint8Array {
+  str += new Array(5 - (str.length % 4)).join('=');
+  str = str.replace(/\-/g, '+').replace(/\_/g, '/');
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function encodeJwtPart(obj: Record<string, any>): string {
+  return base64UrlEncode(new TextEncoder().encode(JSON.stringify(obj)));
+}
 
 export async function createToken(user: AuthUser): Promise<string> {
-  const secret = new TextEncoder().encode(JWT_SECRET);
-  return new SignJWT({ ...user })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime(JWT_EXPIRES_IN)
-    .setIssuedAt()
-    .sign(secret);
+  const header = encodeJwtPart({ alg: 'HS256', typ: 'JWT' });
+  const now = Math.floor(Date.now() / 1000);
+  const expDays = parseInt(JWT_EXPIRES_IN.replace('d', ''), 10) || 7;
+  const payload = encodeJwtPart({
+    ...user,
+    iat: now,
+    exp: now + expDays * 86400,
+  });
+  const data = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(JWT_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return `${data}.${base64UrlEncode(signature)}`;
 }
 
 export async function verifyToken(token: string): Promise<AuthUser | null> {
   try {
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
+    const [headerB64, payloadB64, signatureB64] = token.split('.');
+    if (!headerB64 || !payloadB64 || !signatureB64) return null;
+    const data = `${headerB64}.${payloadB64}`;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(JWT_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    const valid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      base64UrlDecode(signatureB64),
+      new TextEncoder().encode(data)
+    );
+    if (!valid) return null;
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) return null;
     return payload as unknown as AuthUser;
   } catch {
     return null;
