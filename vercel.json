@@ -1,5 +1,1 @@
-{
-  "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
-  "nodeVersion": "22.x"
-}
+{"buildCommand": "pnpm build", "installCommand": "pnpm install", "nodeVersion": "22.x"}
