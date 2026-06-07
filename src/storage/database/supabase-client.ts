@@ -8,12 +8,35 @@ interface SupabaseCredentials {
 }
 
 function loadEnv(): void {
-  if (envLoaded) {
+  if (envLoaded) return;
+
+  // Already configured via platform env vars (EdgeOne Console / CLI)
+  if (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY) {
+    envLoaded = true;
     return;
   }
 
   try {
-    require('dotenv').config();
+    const dotenv = require('dotenv');
+    const path = require('path');
+
+    // EdgeOne bundles .env.local in the function root;
+    // also try .env for general compatibility
+    const envPaths = [
+      path.join(process.cwd(), '.env.local'),
+      path.join(process.cwd(), '.env'),
+      '.env.local',
+      '.env',
+    ];
+
+    for (const envPath of envPaths) {
+      try {
+        dotenv.config({ path: envPath });
+        if (process.env.COZE_SUPABASE_URL) break;
+      } catch {
+        // file may not exist
+      }
+    }
   } catch {
     // dotenv not available in production / edge runtime
   }
