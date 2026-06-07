@@ -10,9 +10,6 @@ import {
 } from 'docx';
 import fs from 'fs';
 import path from 'path';
-
-export const runtime = 'nodejs';
-
 function hasCozeStorage(): boolean {
   return !!(process.env.COZE_BUCKET_ENDPOINT_URL && process.env.COZE_BUCKET_NAME);
 }

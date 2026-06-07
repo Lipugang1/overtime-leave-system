@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getCurrentUser } from '@/lib/auth';
-
-export const runtime = 'nodejs';
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

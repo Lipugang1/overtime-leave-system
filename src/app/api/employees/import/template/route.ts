@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-
-export const runtime = 'nodejs';
-
 export async function GET() {
   const csv = `username,name,role_category,position,department,module,squad,password
 zhangsan,张三,functional_tech,仓储工作岗,物资仓储部,仓储物流模块,,123456

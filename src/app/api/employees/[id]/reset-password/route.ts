@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { hashPassword } from '@/lib/password';
-
-export const runtime = 'nodejs';
-
 const DEFAULT_PASSWORD = '123456';
 
 export async function POST(

@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth-shared';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-
-export const runtime = 'nodejs';
-
 interface RouteContext {
   params: Promise<{ id: string }>;
 }

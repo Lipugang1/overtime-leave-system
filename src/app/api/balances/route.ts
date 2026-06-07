@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
-
-export const runtime = 'nodejs';
-
 export async function GET() {
   try {
     const user = await getCurrentUser();

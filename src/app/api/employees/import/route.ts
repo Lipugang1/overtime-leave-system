@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getCurrentUser } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
-
-export const runtime = 'nodejs';
-
 // 根据 position 自动推断 role_category
 function inferRoleCategory(position: string): string {
   if (!position) return 'functional_tech';
