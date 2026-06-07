@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth-shared';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/leave/export - 导出调休台账
  * 管理员可选日期范围

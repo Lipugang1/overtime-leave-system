@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth-shared';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     // Try Authorization header first (localStorage-based auth)

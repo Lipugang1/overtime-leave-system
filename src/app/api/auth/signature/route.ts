@@ -5,6 +5,8 @@ import { S3Storage } from 'coze-coding-dev-sdk';
 import fs from 'fs';
 import path from 'path';
 
+export const runtime = 'nodejs';
+
 const SIGNATURE_DIR = path.join(process.cwd(), 'public', 'signatures');
 
 function getCozeStorage() {

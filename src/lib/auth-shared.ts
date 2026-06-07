@@ -186,7 +186,7 @@ export function getApprovalRule(position: string, leaveHours: number, isLeave: b
 
 // ===== JWT Token 工具 (Edge runtime compatible, no external deps) =====
 
-function base64UrlEncode(buffer: ArrayBuffer): string {
+function base64UrlEncode(buffer: Uint8Array | ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   const base64 = btoa(String.fromCharCode(...bytes));
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -243,7 +243,7 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
     const valid = await crypto.subtle.verify(
       'HMAC',
       key,
-      base64UrlDecode(signatureB64),
+      base64UrlDecode(signatureB64) as unknown as BufferSource,
       new TextEncoder().encode(data)
     );
     if (!valid) return null;

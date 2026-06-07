@@ -3,6 +3,8 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getCurrentUser } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
   const csv = `username,overtime_date,hours,description
 zhangsan,2024-01-15,4,周末值班

@@ -28,8 +28,20 @@ export async function hashPassword(password: string): Promise<string> {
 
 /**
  * Verify password against hash
+ * Supports both PBKDF2 (iterations.salt.hash) and bcrypt ($2b$...) formats
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  // bcrypt format: $2b$10$...
+  if (hash.startsWith('$2b$') || hash.startsWith('$2a$')) {
+    try {
+      const bcrypt = await import('bcryptjs');
+      return bcrypt.compareSync(password, hash);
+    } catch {
+      return false;
+    }
+  }
+
+  // PBKDF2 format: iterations.salt.hash
   const parts = hash.split('.');
   if (parts.length !== 3) return false;
   const [iterStr, salt, storedHash] = parts;
@@ -64,7 +76,7 @@ async function pbkdf2(
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
-      salt: saltData,
+      salt: saltData as unknown as BufferSource,
       iterations,
       hash: HASH_ALGORITHM,
     },

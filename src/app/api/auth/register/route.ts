@@ -3,6 +3,8 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { hashPassword } from '@/lib/password';
 import { createToken, type AuthUser, POSITION_OPTIONS, REGISTER_ROLE_LABELS } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { username, password, name, role_category, position, department, module, phone, squad } = await request.json();

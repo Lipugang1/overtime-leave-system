@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
+export const runtime = 'nodejs';
+
 export async function PUT(request: NextRequest) {
   try {
     const user = await getCurrentUser();
