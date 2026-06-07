@@ -68,27 +68,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const login = async (username: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '登录失败');
-    localStorage.setItem('auth_token', data.token);
-    setUser(data.user);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`服务器返回异常 (${res.status}): ${text.slice(0, 100)}`);
+      }
+      if (!res.ok) throw new Error(data.error || '登录失败');
+      localStorage.setItem('auth_token', data.token);
+      setUser(data.user);
+    } catch (err: any) {
+      clearTimeout(timeout);
+      if (err.name === 'AbortError') throw new Error('请求超时，请检查网络连接');
+      throw err;
+    }
   };
 
   const register = async (regData: RegisterData) => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(regData),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '注册失败');
-    localStorage.setItem('auth_token', data.token);
-    setUser(data.user);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(regData),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`服务器返回异常 (${res.status}): ${text.slice(0, 100)}`);
+      }
+      if (!res.ok) throw new Error(data.error || '注册失败');
+      localStorage.setItem('auth_token', data.token);
+      setUser(data.user);
+    } catch (err: any) {
+      clearTimeout(timeout);
+      if (err.name === 'AbortError') throw new Error('请求超时，请检查网络连接');
+      throw err;
+    }
   };
 
   const logout = async () => {
