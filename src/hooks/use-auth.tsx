@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchWithAuth = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('auth_token');
-    // 当 body 是 FormData 时，不设置 Content-Type，让浏览器自动设置 multipart/form-data + boundary
     const isFormData = options.body instanceof FormData;
     const headers: Record<string, string> = {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
@@ -41,6 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    // 带上 eo_token 参数确保通过 EdgeOne 鉴权
+    const sep = url.includes('?') ? '&' : '?';
+    const eoParam = new URLSearchParams(window.location.search).get('eo_token');
+    if (eoParam) {
+      const eoTime = new URLSearchParams(window.location.search).get('eo_time');
+      url = `${url}${sep}eo_token=${eoParam}${eoTime ? `&eo_time=${eoTime}` : ''}`;
     }
     return fetch(url, { ...options, headers });
   }, []);
@@ -70,8 +76,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (username: string, password: string) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
+    // 带上 eo_token 确保通过 EdgeOne 鉴权
+    let url = '/api/auth/login';
+    const eoParam = new URLSearchParams(window.location.search).get('eo_token');
+    if (eoParam) {
+      const eoTime = new URLSearchParams(window.location.search).get('eo_time');
+      url = `${url}?eo_token=${eoParam}${eoTime ? `&eo_time=${eoTime}` : ''}`;
+    }
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -98,8 +111,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (regData: RegisterData) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
+    let url = '/api/auth/register';
+    const eoParam = new URLSearchParams(window.location.search).get('eo_token');
+    if (eoParam) {
+      const eoTime = new URLSearchParams(window.location.search).get('eo_time');
+      url = `${url}?eo_token=${eoParam}${eoTime ? `&eo_time=${eoTime}` : ''}`;
+    }
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(regData),
