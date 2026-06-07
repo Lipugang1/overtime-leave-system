@@ -59,7 +59,7 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 // ===== JWT 常量 =====
-export const JWT_SECRET = process.env.JWT_SECRET || JWT_FALLBACK_SECRET;
+export const JWT_SECRET = JWT_FALLBACK_SECRET;
 export const JWT_EXPIRES_IN = '7d';
 export const COOKIE_NAME = 'auth_token';
 
