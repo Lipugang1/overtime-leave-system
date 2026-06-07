@@ -1,5 +1,9 @@
 // 安全的客户端认证工具 - 不依赖 next/headers
 
+// ===== JWT 密钥 =====
+// 使用固定密钥确保所有 API 路由的签名/验证一致
+const JWT_FALLBACK_SECRET = 'overtime-system-jwt-secret-key-fixed';
+
 // ===== 角色分类 =====
 export const ROLE_CATEGORIES = ['admin', 'functional_tech', 'management', 'production'] as const;
 export type RoleCategory = typeof ROLE_CATEGORIES[number];
@@ -55,7 +59,7 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 // ===== JWT 常量 =====
-export const JWT_SECRET = process.env.JWT_SECRET || 'overtime-management-secret-key-2024';
+export const JWT_SECRET = process.env.JWT_SECRET || JWT_FALLBACK_SECRET;
 export const JWT_EXPIRES_IN = '7d';
 export const COOKIE_NAME = 'auth_token';
 

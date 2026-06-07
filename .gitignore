@@ -202,3 +202,9 @@ compare.txt
 branch_sync.txt
 vc_*.txt
 vercel_*.txt
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*
+  
